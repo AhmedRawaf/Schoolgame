@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النتائج - من أنا في الجدول الدوري؟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0b1020 0%, #1a1f3a 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(19, 26, 51, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #6ee7b7;
+            margin-bottom: 20px;
+        }
+        
+        .score-display {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+        }
+        
+        .score-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .score-text {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .student-info {
+            background: rgba(15, 23, 52, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #9ca3af;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: rgba(19, 26, 51, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid #6ee7b7;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #6ee7b7;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        
+        .review-section {
+            background: rgba(19, 26, 51, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .review-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #6ee7b7;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .question-item {
+            background: rgba(15, 23, 52, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #60a5fa;
+        }
+        
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .answer-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .your-answer {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #f87171;
+        }
+        
+        .correct-answer {
+            background: rgba(52, 211, 153, 0.2);
+            border: 1px solid #34d399;
+        }
+        
+        .answer-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .answer-value {
+            font-size: 1.1rem;
+        }
+        
+        .explanation {
+            background: rgba(15, 23, 52, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #60a5fa;
+        }
+        
+        .explanation h4 {
+            color: #60a5fa;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(96, 165, 250, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(107, 114, 128, 0.3);
+        }
+        
+        .download-section {
+            background: rgba(15, 23, 52, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            border: 2px dashed #6ee7b7;
+        }
+        
+        .download-text {
+            color: #6ee7b7;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+        
+        .download-info {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .answer-info {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎉 انتهى الاختبار! 🎉</h1>
+            
+            <div class="score-display">
+                <div class="score-number">{{ results.score }}/{{ results.total }}</div>
+                <div class="score-text">درجتك النهائية</div>
+            </div>
+            
+            <div class="student-info">
+                <strong>{{ results.student_name }}</strong> | الصف: <strong>{{ results.student_class }}</strong>
+                <br>
+                مستوى الصعوبة: <strong>{{ results.difficulty }}</strong>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ results.correct_answers }}</div>
+                    <div class="stat-label">إجابات صحيحة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ results.percent }}%</div>
+                    <div class="stat-label">نسبة النجاح</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ results.total // 10 }}</div>
+                    <div class="stat-label">إجمالي الأسئلة</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="download-section">
+            <div class="download-text">📊 تم حفظ النتائج بنجاح!</div>
+            <div class="download-info">
+                تم حفظ ملخص النتائج في ملف CSV يمكن للمعلم تحميله وتحليله
+            </div>
+        </div>
+        
+        <div class="review-section">
+            <h2 class="review-title">مراجعة مفصلة للإجابات</h2>
+            
+            {% for question in results.history %}
+            <div class="question-item">
+                <div class="question-text">
+                    <strong>س{{ loop.index }}.</strong> {{ question.q }}
+                </div>
+                
+                <div class="answer-info your-answer">
+                    <div>
+                        <div class="answer-label">إجابتك:</div>
+                        <div class="answer-value">
+                            {% if question.user == -1 %}
+                                لم يجب
+                            {% else %}
+                                {{ question.options[question.user] }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        {% if question.correct %}
+                            <span style="color: #34d399; font-size: 1.5rem;">✓</span>
+                        {% else %}
+                            <span style="color: #f87171; font-size: 1.5rem;">✗</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="answer-info correct-answer">
+                    <div>
+                        <div class="answer-label">الإجابة الصحيحة:</div>
+                        <div class="answer-value">{{ question.options[question.correctIndex] }}</div>
+                    </div>
+                </div>
+                
+                <div class="explanation">
+                    <h4>التفسير:</h4>
+                    <p>{{ question.explain }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="buttons">
+            <a href="/new_game" class="btn btn-primary">اختبار جديد</a>
+            <a href="/" class="btn btn-secondary">العودة للرئيسية</a>
+        </div>
+    </div>
+</body>
+</html>

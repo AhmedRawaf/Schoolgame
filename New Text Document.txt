@@ -1,0 +1,527 @@
+# -*- coding: utf-8 -*-
+"""
+لعبة واجهة رسومية (Tkinter): من أنا في الجدول الدوري؟
+— نسخة ملوّنة + إدخال اسم الطالب/الصف + حفظ النتائج CSV —
+
+تشغيل مباشر:
+    python periodic_quiz_tk.py
+
+تحويل لأيقونة (Windows):
+    pip install pyinstaller
+    pyinstaller --onefile --windowed --icon=icon.ico periodic_quiz_tk.py
+
+تحويل لتطبيق (macOS .app):
+    pip install pyinstaller
+    pyinstaller --windowed --name "PeriodicQuiz" --icon=icon.icns periodic_quiz_tk.py
+
+"""
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+import random
+import csv
+import os
+from datetime import datetime
+
+# ------------------------ بيانات العناصر (قابلة للتوسعة) ------------------------
+ELEMENTS = [
+    {"Z":1,  "symbol":"H",  "name":"هيدروجين", "group":"لافلز", "period":1},
+    {"Z":2,  "symbol":"He", "name":"هيليوم", "group":"غاز نبيل", "period":1},
+    {"Z":3,  "symbol":"Li", "name":"ليثيوم", "group":"فلز قلوي", "period":2},
+    {"Z":4,  "symbol":"Be", "name":"بيريليوم", "group":"فلز قلوي ترابي", "period":2},
+    {"Z":5,  "symbol":"B",  "name":"بورون", "group":"شبه فلز", "period":2},
+    {"Z":6,  "symbol":"C",  "name":"كربون", "group":"لافلز", "period":2},
+    {"Z":7,  "symbol":"N",  "name":"نيتروجين", "group":"لافلز", "period":2},
+    {"Z":8,  "symbol":"O",  "name":"أكسجين", "group":"لافلز", "period":2},
+    {"Z":9,  "symbol":"F",  "name":"فلور", "group":"هالوجين", "period":2},
+    {"Z":10, "symbol":"Ne", "name":"نيون", "group":"غاز نبيل", "period":2},
+    {"Z":11, "symbol":"Na", "name":"صوديوم", "group":"فلز قلوي", "period":3},
+    {"Z":12, "symbol":"Mg", "name":"مغنيسيوم", "group":"فلز قلوي ترابي", "period":3},
+    {"Z":13, "symbol":"Al", "name":"ألمنيوم", "group":"فلز", "period":3},
+    {"Z":14, "symbol":"Si", "name":"سيليكون", "group":"شبه فلز", "period":3},
+    {"Z":15, "symbol":"P",  "name":"فوسفور", "group":"لافلز", "period":3},
+    {"Z":16, "symbol":"S",  "name":"كبريت", "group":"لافلز", "period":3},
+    {"Z":17, "symbol":"Cl", "name":"كلور", "group":"هالوجين", "period":3},
+    {"Z":18, "symbol":"Ar", "name":"أرجون", "group":"غاز نبيل", "period":3},
+    {"Z":19, "symbol":"K",  "name":"بوتاسيوم", "group":"فلز قلوي", "period":4},
+    {"Z":20, "symbol":"Ca", "name":"كالسيوم", "group":"فلز قلوي ترابي", "period":4},
+    {"Z":26, "symbol":"Fe", "name":"حديد", "group":"فلز انتقالي", "period":4},
+    {"Z":28, "symbol":"Ni", "name":"نيكل", "group":"فلز انتقالي", "period":4},
+    {"Z":29, "symbol":"Cu", "name":"نحاس", "group":"فلز انتقالي", "period":4},
+    {"Z":30, "symbol":"Zn", "name":"زنك", "group":"فلز انتقالي", "period":4},
+    {"Z":35, "symbol":"Br", "name":"بروم", "group":"هالوجين", "period":4},
+    {"Z":36, "symbol":"Kr", "name":"كريبتون", "group":"غاز نبيل", "period":4},
+    {"Z":47, "symbol":"Ag", "name":"فضة", "group":"فلز انتقالي", "period":5},
+    {"Z":53, "symbol":"I",  "name":"يود", "group":"هالوجين", "period":5},
+    {"Z":54, "symbol":"Xe", "name":"زينون", "group":"غاز نبيل", "period":5},
+    {"Z":55, "symbol":"Cs", "name":"سيزيوم", "group":"فلز قلوي", "period":6},
+    {"Z":56, "symbol":"Ba", "name":"باريوم", "group":"فلز قلوي ترابي", "period":6},
+    {"Z":79, "symbol":"Au", "name":"ذهب", "group":"فلز انتقالي", "period":6},
+    {"Z":80, "symbol":"Hg", "name":"زئبق", "group":"فلز انتقالي", "period":6},
+    {"Z":82, "symbol":"Pb", "name":"رصاص", "group":"فلز", "period":6},
+    {"Z":92, "symbol":"U",  "name":"يورانيوم", "group":"أكتينيد", "period":7},
+]
+
+# ------------------------ أدوات مساعدة ------------------------
+def shuffle(lst):
+    lst = list(lst)
+    random.shuffle(lst)
+    return lst
+
+
+def make_question(difficulty):
+    e = random.choice(ELEMENTS)
+    others = shuffle([x for x in ELEMENTS if x != e])[:3]
+
+    q_text = ""
+    options = []
+    correct_idx = 0
+    explain = ""
+
+    if difficulty == "سهل":
+        flip = random.random() < 0.5
+        if flip:
+            q_text = f"ما رمز العنصر «{e['name']}»؟"
+            options = shuffle([e["symbol"]] + [o["symbol"] for o in others])
+            correct_idx = options.index(e["symbol"])
+            explain = f"«{e['name']}» رمزه الكيميائي هو {e['symbol']}."
+        else:
+            q_text = f"ما اسم العنصر الذي رمزه «{e['symbol']}»؟"
+            options = shuffle([e["name"]] + [o["name"] for o in others])
+            correct_idx = options.index(e["name"])
+            explain = f"الرمز {e['symbol']} يعود للعنصر «{e['name']}»."
+    elif difficulty == "متوسط":
+        mode = random.randint(0, 2)
+        if mode == 0:
+            q_text = f"ما اسم العنصر الذي عدده الذري {e['Z']}؟"
+            options = shuffle([e["name"]] + [o["name"] for o in others])
+            correct_idx = options.index(e["name"])
+            explain = f"العدد الذري {e['Z']} يخص «{e['name']}» ({e['symbol']})."
+        elif mode == 1:
+            q_text = f"ما رمز العنصر الذي عدده الذري {e['Z']}؟"
+            options = shuffle([e["symbol"]] + [o["symbol"] for o in others])
+            correct_idx = options.index(e["symbol"])
+            explain = f"العدد الذري {e['Z']} يخص «{e['name']}»، ورمزه {e['symbol']}."
+        else:
+            q_text = f"ما العدد الذري للعنصر «{e['name']}»؟"
+            opts = shuffle([str(e["Z")] ] + [str(o["Z"]) for o in others])
+            options = opts
+            correct_idx = options.index(str(e["Z"]))
+            explain = f"«{e['name']}» ({e['symbol']}) عددُه الذري {e['Z']}."
+    else:  # صعب
+        mode = random.randint(0, 2)
+        if mode == 0:
+            q_text = f"إلى أي مجموعة ينتمي العنصر «{e['name']}»؟"
+            groups = list({e["group"]} | {o["group"] for o in others})
+            while len(groups) < 4:
+                extra = random.choice(ELEMENTS)["group"]
+                if extra not in groups:
+                    groups.append(extra)
+            options = shuffle(groups)[:4]
+            if e["group"] not in options:
+                options[0] = e["group"]
+            options = shuffle(options)
+            correct_idx = options.index(e["group"])
+            explain = f"«{e['name']}» ({e['symbol']}) ضمن مجموعة: {e['group']}."
+        elif mode == 1:
+            q_text = f"أي من الآتي رمز العنصر ذو العدد الذري {e['Z']}؟"
+            options = shuffle([e["symbol"]] + [o["symbol"] for o in others])
+            correct_idx = options.index(e["symbol"])
+            explain = f"Z={e['Z']} ⇠ «{e['name']}» ورمزه {e['symbol']}."
+        else:
+            q_text = f"أي من الآتي يطابق الوصف: عنصر {e['group']} رمزه «{e['symbol']}»؟"
+            options = shuffle([e["name"]] + [o["name"] for o in others])
+            correct_idx = options.index(e["name"])
+            explain = f"الرمز {e['symbol']} يعود للعنصر «{e['name']}»."
+
+    # ضمان 4 خيارات
+    while len(options) < 4:
+        extra = random.choice(ELEMENTS)
+        val = extra["name"] if (isinstance(options[0], str) and not options[0].isdigit()) else extra["symbol"]
+        if val not in options:
+            options.append(val)
+    options = options[:4]
+
+    return {"q": q_text, "options": options, "correct": correct_idx, "explain": explain}
+
+
+# ------------------------ حفظ النتائج CSV ------------------------
+def save_results_to_csv(history, score, qcount, qtime, difficulty, student_name, student_class):
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    base = os.path.abspath(os.path.dirname(__file__)) if '__file__' in globals() else os.getcwd()
+    summary_path = os.path.join(base, "results_summary.csv")
+    detail_path  = os.path.join(base, "results_detailed.csv")
+
+    # ملخص
+    corrects = sum(1 for h in history if h["correct"])
+    percent = round((corrects / max(1, qcount)) * 100)
+    summary_headers = [
+        "timestamp","student_name","class","difficulty","questions","time_per_q","score","correct","percent"
+    ]
+    summary_row = [ts, student_name, student_class, difficulty, qcount, qtime, score, corrects, percent]
+
+    write_headers = not os.path.exists(summary_path)
+    with open(summary_path, "a", newline='', encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        if write_headers:
+            w.writerow(summary_headers)
+        w.writerow(summary_row)
+
+    # تفصيلي
+    detail_headers = ["timestamp","student_name","class","idx","question","chosen","correct_answer","is_correct"]
+    write_headers = not os.path.exists(detail_path)
+    with open(detail_path, "a", newline='', encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        if write_headers:
+            w.writerow(detail_headers)
+        for i, h in enumerate(history, 1):
+            chosen = "لم يجب" if h["user"] == -1 else h["options"][h["user"]]
+            correct_ans = h["options"][h["correctIndex"]]
+            w.writerow([ts, student_name, student_class, i, h["q"], chosen, correct_ans, "صحيح" if h["correct"] else "خطأ"]) 
+
+    return summary_path, detail_path
+
+
+# ------------------------ واجهة اللعبة ------------------------
+class QuizApp:
+    def __init__(self, root):
+        self.root = root
+        root.title("من أنا في الجدول الدوري؟ - Python (Tkinter)")
+        root.geometry("940x680")
+        root.configure(bg="#0b1020")
+
+        # ألوان وثيم مبسّط
+        self.colors = {
+            "bg": "#0b1020",
+            "card": "#131a33",
+            "accent1": "#6ee7b7",
+            "accent2": "#60a5fa",
+            "text": "#e5e7eb",
+            "muted": "#9ca3af",
+            "danger": "#f87171",
+            "success": "#34d399",
+        }
+
+        style = ttk.Style()
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
+        style.configure("TFrame", background=self.colors["bg"])
+        style.configure("Card.TFrame", background=self.colors["card"], relief="groove")
+        style.configure("TLabel", background=self.colors["bg"], foreground=self.colors["text"])
+        style.configure("Muted.TLabel", foreground=self.colors["muted"], background=self.colors["bg"])
+        style.configure("Title.TLabel", font=("Segoe UI", 20, "bold"), foreground=self.colors["accent1"], background=self.colors["bg"])
+        style.configure("SmallPill.TLabel", background="#0f1734", foreground=self.colors["muted"], padding=4)
+        style.configure("Accent.TButton", padding=8)
+        style.map("Accent.TButton", background=[('!disabled', self.colors["accent2"])])
+
+        self.state = {
+            "difficulty": "متوسط",
+            "qCount": 10,
+            "qTime": 30,
+            "index": -1,
+            "score": 0,
+            "usedFifty": False,
+            "timeLeft": 30,
+            "timerId": None,
+            "questions": [],
+            "history": [],
+            "student_name": "",
+            "student_class": "",
+        }
+
+        self.build_setup_ui()
+        self.build_game_ui()
+        self.show_setup()
+
+    # --------------------- UI Builders ---------------------
+    def build_setup_ui(self):
+        self.setup_frame = ttk.Frame(self.root, padding=14, style="TFrame")
+        self.setup_frame.columnconfigure((0,1,2,3), weight=1)
+
+        title = ttk.Label(self.setup_frame, text="من أنا في الجدول الدوري؟", style="Title.TLabel")
+        subtitle = ttk.Label(self.setup_frame, text="اختر الإعدادات ثم ابدأ اللعبة", style="Muted.TLabel")
+
+        # حقول اسم الطالب/الصف
+        ttk.Label(self.setup_frame, text="اسم الطالب/ـة", style="TLabel").grid(row=1, column=0, sticky="w", padx=4, pady=(8,2))
+        self.student_name_var = tk.StringVar()
+        name_entry = ttk.Entry(self.setup_frame, textvariable=self.student_name_var)
+        name_entry.grid(row=2, column=0, sticky="ew", padx=4)
+
+        ttk.Label(self.setup_frame, text="الصف", style="TLabel").grid(row=1, column=1, sticky="w", padx=4, pady=(8,2))
+        self.student_class_var = tk.StringVar()
+        class_entry = ttk.Entry(self.setup_frame, textvariable=self.student_class_var)
+        class_entry.grid(row=2, column=1, sticky="ew", padx=4)
+
+        ttk.Label(self.setup_frame, text="مستوى الصعوبة").grid(row=3, column=0, sticky="w", padx=4, pady=(12,4))
+        self.diff_var = tk.StringVar(value="متوسط")
+        diff_combo = ttk.Combobox(self.setup_frame, textvariable=self.diff_var, values=["سهل","متوسط","صعب"], state="readonly")
+        diff_combo.grid(row=4, column=0, sticky="ew", padx=4)
+
+        ttk.Label(self.setup_frame, text="عدد الأسئلة").grid(row=3, column=1, sticky="w", padx=4, pady=(12,4))
+        self.qcount_var = tk.IntVar(value=10)
+        qcount = ttk.Spinbox(self.setup_frame, from_=5, to=30, textvariable=self.qcount_var, width=8)
+        qcount.grid(row=4, column=1, sticky="ew", padx=4)
+
+        ttk.Label(self.setup_frame, text="زمن السؤال (ثانية)").grid(row=3, column=2, sticky="w", padx=4, pady=(12,4))
+        self.qtime_var = tk.IntVar(value=30)
+        qtime = ttk.Spinbox(self.setup_frame, from_=10, to=90, textvariable=self.qtime_var, width=8)
+        qtime.grid(row=4, column=2, sticky="ew", padx=4)
+
+        start_btn = ttk.Button(self.setup_frame, text="ابدأ اللعبة", style="Accent.TButton", command=self.start_game)
+        start_btn.grid(row=4, column=3, sticky="ew", padx=4)
+
+        title.grid(row=0, column=0, columnspan=4, sticky="w")
+        subtitle.grid(row=0, column=2, columnspan=2, sticky="e")
+
+    def build_game_ui(self):
+        self.game_frame = ttk.Frame(self.root, padding=14, style="TFrame")
+        self.game_frame.columnconfigure(0, weight=1)
+
+        # شريط علوي ملوّن
+        top = ttk.Frame(self.game_frame, style="TFrame")
+        top.grid(row=0, column=0, sticky="ew")
+        top.columnconfigure(0, weight=1)
+        title = ttk.Label(top, text="من أنا في الجدول الدوري؟", style="Title.TLabel")
+        title.grid(row=0, column=0, sticky="w")
+        self.student_badge = ttk.Label(top, text="", style="Muted.TLabel")
+        self.student_badge.grid(row=1, column=0, sticky="w")
+
+        # شريط الحالة
+        status = ttk.Frame(self.game_frame, style="TFrame")
+        status.grid(row=1, column=0, sticky="ew", pady=(8,0))
+        status.columnconfigure(0, weight=1)
+
+        self.progress_var = tk.DoubleVar(value=0.0)
+        self.progress = ttk.Progressbar(status, maximum=1.0, variable=self.progress_var)
+        self.progress.grid(row=0, column=0, sticky="ew", padx=(0,8))
+
+        self.timer_lbl = ttk.Label(status, text="00:30")
+        self.timer_lbl.grid(row=0, column=1, padx=6)
+
+        self.score_lbl = ttk.Label(status, text="النتيجة: 0")
+        self.score_lbl.grid(row=0, column=2)
+
+        # بطاقة السؤال
+        qcard = ttk.Frame(self.game_frame, padding=12, style="Card.TFrame")
+        qcard.grid(row=2, column=0, sticky="ew", pady=8)
+        qcard.columnconfigure(0, weight=1)
+        self.qtext = ttk.Label(qcard, text="—", font=("Segoe UI", 14), background=self.colors["card"], foreground=self.colors["text"]) 
+        self.qtext.grid(row=0, column=0, sticky="w")
+
+        # خيارات الإجابة
+        self.answers_frame = ttk.Frame(self.game_frame, style="TFrame")
+        self.answers_frame.grid(row=3, column=0, sticky="nsew")
+        for i in range(2):
+            self.answers_frame.columnconfigure(i, weight=1)
+
+        self.answer_buttons = []
+        for i in range(4):
+            b = ttk.Button(self.answers_frame, text=f"خيار {i+1}", style="Accent.TButton", command=lambda idx=i: self.handle_answer(idx))
+            b.grid(row=i//2, column=i%2, sticky="ew", padx=6, pady=6, ipady=8)
+            self.answer_buttons.append(b)
+
+        # أدوات
+        foot = ttk.Frame(self.game_frame, style="TFrame")
+        foot.grid(row=4, column=0, sticky="ew", pady=(8,0))
+        foot.columnconfigure(0, weight=1)
+
+        self.hint_lbl = ttk.Label(foot, text="تلميح: لديك مساعدة واحدة 50:50 لإزالة خيارين.", style="Muted.TLabel")
+        self.hint_lbl.grid(row=0, column=0, sticky="w")
+
+        self.fifty_btn = ttk.Button(foot, text="50:50", command=self.use_fifty)
+        self.fifty_btn.grid(row=0, column=1, padx=6)
+
+        self.skip_btn = ttk.Button(foot, text="تخطي", command=self.skip_question)
+        self.skip_btn.grid(row=0, column=2, padx=6)
+
+    # --------------------- عرض الإطارات ---------------------
+    def show_setup(self):
+        self.game_frame.grid_forget()
+        self.setup_frame.grid(row=0, column=0, sticky="nsew")
+
+    def show_game(self):
+        self.setup_frame.grid_forget()
+        self.game_frame.grid(row=0, column=0, sticky="nsew")
+
+    # --------------------- منطق اللعبة ---------------------
+    def start_game(self):
+        self.state["difficulty"] = self.diff_var.get()
+        self.state["qCount"] = max(5, min(30, int(self.qcount_var.get())))
+        self.state["qTime"] = max(10, min(90, int(self.qtime_var.get())))
+        self.state["student_name"] = self.student_name_var.get().strip() or "—"
+        self.state["student_class"] = self.student_class_var.get().strip() or "—"
+
+        self.state["index"] = -1
+        self.state["score"] = 0
+        self.state["usedFifty"] = False
+        self.state["history"] = []
+        self.state["questions"] = [make_question(self.state["difficulty"]) for _ in range(self.state["qCount"])]
+        self.score_lbl.config(text="النتيجة: 0")
+        self.progress_var.set(0.0)
+
+        self.student_badge.config(text=f"الطالب/ـة: {self.state['student_name']}  |  الصف: {self.state['student_class']}")
+
+        self.show_game()
+        self.next_question()
+
+    def render_question(self):
+        q = self.state["questions"][self.state["index"]]
+        self.qtext.config(text=f"سؤال {self.state['index']+1} من {self.state['qCount']}: {q['q']}")
+        for i, btn in enumerate(self.answer_buttons):
+            btn.config(text=str(q["options"][i]), state="normal")
+        self.fifty_btn.config(state="normal" if not self.state["usedFifty"] else "disabled")
+        self.hint_lbl.config(text="تلميح: لديك مساعدة واحدة 50:50 لإزالة خيارين." if not self.state["usedFifty"] else "تم استخدام 50:50 ✔️")
+
+        # Timer
+        self.state["timeLeft"] = self.state["qTime"]
+        self.update_timer()
+
+    def update_timer(self):
+        t = self.state["timeLeft"]
+        m, s = divmod(t, 60)
+        self.timer_lbl.config(text=f"{m:02d}:{s:02d}")
+        if t <= 0:
+            self.lock_answers()
+            self.record_answer(-1)  # لم يجب
+            self.root.after(600, self.next_question)
+        else:
+            self.state["timeLeft"] -= 1
+            self.state["timerId"] = self.root.after(1000, self.update_timer)
+
+    def handle_answer(self, idx):
+        self.lock_answers()
+        if self.state["timerId"]:
+            try:
+                self.root.after_cancel(self.state["timerId"])
+            except Exception:
+                pass
+
+        q = self.state["questions"][self.state["index"]]
+        if idx == q["correct"]:
+            self.state["score"] += 10
+            self.score_lbl.config(text=f"النتيجة: {self.state['score']}")
+        self.record_answer(idx)
+        self.root.after(600, self.next_question)
+
+    def lock_answers(self):
+        for b in self.answer_buttons:
+            b.config(state="disabled")
+
+    def record_answer(self, user_idx):
+        q = self.state["questions"][self.state["index"]]
+        correct_bool = (user_idx == q["correct"])
+        self.state["history"].append({
+            "q": q["q"],
+            "options": q["options"],
+            "correctIndex": q["correct"],
+            "user": user_idx,
+            "correct": correct_bool,
+            "explain": q["explain"]
+        })
+
+    def next_question(self):
+        # تقدّم الشريط
+        self.progress_var.set((self.state["index"]+1)/max(1,self.state["qCount"]))
+
+        if self.state["index"] >= self.state["qCount"] - 1:
+            self.finish_game()
+            return
+        self.state["index"] += 1
+        self.render_question()
+
+    def use_fifty(self):
+        if self.state["usedFifty"]:
+            return
+        q = self.state["questions"][self.state["index"]]
+        wrong_idxs = [i for i in range(4) if i != q["correct"]]
+        random.shuffle(wrong_idxs)
+        to_disable = wrong_idxs[:2]
+        for i in to_disable:
+            self.answer_buttons[i].config(state="disabled")
+        self.state["usedFifty"] = True
+        self.hint_lbl.config(text="تم استخدام 50:50 ✔️")
+
+    def skip_question(self):
+        self.lock_answers()
+        if self.state["timerId"]:
+            try:
+                self.root.after_cancel(self.state["timerId"])
+            except Exception:
+                pass
+        self.record_answer(-1)
+        self.root.after(200, self.next_question)
+
+    def finish_game(self):
+        # إظهار النتيجة والمراجعة
+        corrects = sum(1 for h in self.state["history"] if h["correct"])
+        percent = round((corrects / max(1, self.state["qCount"])) * 100)
+        total = self.state["qCount"] * 10
+        msg = f"درجتك {self.state['score']} / {total} — إجابات صحيحة: {corrects} ({percent}%)."
+
+        # حفظ CSV
+        summary_path, detail_path = save_results_to_csv(
+            self.state["history"], self.state["score"], self.state["qCount"], self.state["qTime"], self.state["difficulty"],
+            self.state["student_name"], self.state["student_class"]
+        )
+        try:
+            messagebox.showinfo(
+                "تم حفظ النتائج",
+                f"تم حفظ الملخص في:
+{summary_path}
+
+والتفاصيل في:
+{detail_path}"
+            )
+        except Exception:
+            pass
+
+        review_win = tk.Toplevel(self.root)
+        review_win.title("النتيجة والمراجعة")
+        review_win.geometry("820x600")
+        review_win.configure(bg=self.colors["bg"])
+
+        lbl = ttk.Label(review_win, text=msg, font=("Segoe UI", 12, "bold"))
+        lbl.pack(pady=8)
+        who = ttk.Label(review_win, text=f"الطالب/ـة: {self.state['student_name']}  |  الصف: {self.state['student_class']}", style="Muted.TLabel")
+        who.pack()
+
+        container = ttk.Frame(review_win, style="TFrame")
+        container.pack(fill="both", expand=True, padx=10, pady=6)
+        canvas = tk.Canvas(container, background=self.colors["bg"], highlightthickness=0)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        inner = ttk.Frame(canvas, style="TFrame")
+
+        inner.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        for idx, h in enumerate(self.state["history"], 1):
+            frame = ttk.Frame(inner, padding=10, style="Card.TFrame")
+            frame.pack(fill="x", pady=6)
+            ttk.Label(frame, text=f"س{idx}. {h['q']}", background=self.colors["card"], foreground=self.colors["text"], font=("Segoe UI", 11, "bold")).pack(anchor="w")
+            user_text = "لم يجب" if h["user"] == -1 else h["options"][h["user"]]
+            correct_text = h["options"][h["correctIndex"]]
+            color = self.colors["success"] if h["correct"] else self.colors["danger"]
+            info = tk.Label(frame, text=f"إجابتك: {user_text} — الصحيحة: {correct_text}",
+                            fg=color, bg=self.colors["card"], justify="right", wraplength=760)
+            info.pack(anchor="w", pady=2)
+            ttk.Label(frame, text=f"تفسير: {h['explain']}", style="Muted.TLabel").pack(anchor="w")
+
+        btns = ttk.Frame(review_win, style="TFrame")
+        btns.pack(pady=8)
+        ttk.Button(btns, text="لعبة جديدة", style="Accent.TButton", command=lambda: [review_win.destroy(), self.show_setup()]).pack(side="left", padx=6)
+        ttk.Button(btns, text="إغلاق", command=review_win.destroy).pack(side="left", padx=6)
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = QuizApp(root)
+    root.mainloop()

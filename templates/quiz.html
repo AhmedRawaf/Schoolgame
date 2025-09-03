@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الاختبار - من أنا في الجدول الدوري؟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0b1020 0%, #1a1f3a 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(19, 26, 51, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #6ee7b7;
+            margin-bottom: 10px;
+        }
+        
+        .student-info {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 1rem;
+        }
+        
+        .progress-bar {
+            background: rgba(15, 23, 52, 0.6);
+            border-radius: 10px;
+            height: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #6ee7b7, #60a5fa);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .timer {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .score {
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .question-card {
+            background: rgba(19, 26, 51, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .option-btn {
+            background: rgba(31, 41, 55, 0.8);
+            border: 2px solid #374151;
+            border-radius: 15px;
+            padding: 20px;
+            color: #e5e7eb;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .option-btn:hover:not(:disabled) {
+            border-color: #60a5fa;
+            background: rgba(31, 41, 55, 0.9);
+            transform: translateY(-2px);
+        }
+        
+        .option-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .option-btn.correct {
+            background: rgba(52, 211, 153, 0.2);
+            border-color: #34d399;
+            color: #34d399;
+        }
+        
+        .option-btn.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #f87171;
+            color: #f87171;
+        }
+        
+        .tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 52, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .hint {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        
+        .tool-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-fifty {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        
+        .btn-fifty:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+        }
+        
+        .btn-fifty:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-skip {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+        }
+        
+        .btn-skip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(107, 114, 128, 0.3);
+        }
+        
+        .explanation {
+            background: rgba(15, 23, 52, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #60a5fa;
+            display: none;
+        }
+        
+        .explanation.show {
+            display: block;
+        }
+        
+        .explanation h4 {
+            color: #60a5fa;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tools {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .tool-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .question-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">من أنا في الجدول الدوري؟</h1>
+            <div class="student-info" id="studentInfo">جاري التحميل...</div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            
+            <div class="status-bar">
+                <div class="timer" id="timer">00:30</div>
+                <div class="score" id="score">النتيجة: 0</div>
+            </div>
+        </div>
+        
+        <div class="question-card">
+            <div class="question-text" id="questionText">جاري تحميل السؤال...</div>
+            
+            <div class="options-grid" id="optionsGrid">
+                <!-- سيتم ملء الخيارات ديناميكياً -->
+            </div>
+            
+            <div class="explanation" id="explanation">
+                <h4>التفسير:</h4>
+                <p id="explanationText"></p>
+            </div>
+        </div>
+        
+        <div class="tools">
+            <div class="hint" id="hint">تلميح: لديك مساعدة واحدة 50:50 لإزالة خيارين.</div>
+            <div class="tool-buttons">
+                <button class="btn btn-fifty" id="fiftyBtn">50:50</button>
+                <button class="btn btn-skip" id="skipBtn">تخطي</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        let totalQuestions = 0;
+        let timeLeft = 30;
+        let timerInterval;
+        let usedFifty = false;
+        
+        // تحميل السؤال الأول
+        window.addEventListener('load', loadQuestion);
+        
+        async function loadQuestion() {
+            try {
+                const response = await fetch('/get_question');
+                const data = await response.json();
+                
+                if (data.error) {
+                    if (data.error === 'Quiz completed') {
+                        window.location.href = '/finish_quiz';
+                        return;
+                    }
+                    alert('حدث خطأ: ' + data.error);
+                    return;
+                }
+                
+                // تحديث الواجهة
+                document.getElementById('questionText').textContent = data.question;
+                document.getElementById('score').textContent = `النتيجة: ${data.score}`;
+                
+                currentQuestion = data.current_question;
+                totalQuestions = data.total_questions;
+                
+                // تحديث شريط التقدم
+                const progress = (currentQuestion - 1) / totalQuestions;
+                document.getElementById('progressBar').style.width = (progress * 100) + '%';
+                
+                // إنشاء خيارات الإجابة
+                createOptions(data.options);
+                
+                // بدء المؤقت
+                startTimer();
+                
+            } catch (error) {
+                console.error('Error loading question:', error);
+                alert('حدث خطأ في تحميل السؤال');
+            }
+        }
+        
+        function createOptions(options) {
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            
+            options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => selectAnswer(index);
+                grid.appendChild(btn);
+            });
+        }
+        
+        function startTimer() {
+            timeLeft = 30; // يمكن تعديل هذا حسب إعدادات اللعبة
+            updateTimer();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timeOut();
+                }
+            }, 1000);
+        }
+        
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function timeOut() {
+            // انتهاء الوقت - تسجيل "لم يجب"
+            submitAnswer(-1);
+        }
+        
+        async function selectAnswer(answerIndex) {
+            clearInterval(timerInterval);
+            
+            // تعطيل جميع الأزرار
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            // إظهار الإجابة الصحيحة
+            const correctIndex = await getCorrectAnswer();
+            if (correctIndex !== null) {
+                buttons[correctIndex].classList.add('correct');
+                if (answerIndex !== correctIndex && answerIndex !== -1) {
+                    buttons[answerIndex].classList.add('incorrect');
+                }
+            }
+            
+            // إرسال الإجابة
+            submitAnswer(answerIndex);
+        }
+        
+        async function getCorrectAnswer() {
+            // في التطبيق الحقيقي، ستحتاج لتخزين الإجابة الصحيحة
+            // هذا مثال مبسط
+            return 0; // الإجابة الأولى كأمثلة
+        }
+        
+        async function submitAnswer(answerIndex) {
+            try {
+                const response = await fetch('/submit_answer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ answer: answerIndex })
+                });
+                
+                const result = await response.json();
+                
+                if (result.game_over) {
+                    // انتهت اللعبة
+                    window.location.href = '/finish_quiz';
+                } else {
+                    // إظهار التفسير
+                    showExplanation(result.explanation);
+                    
+                    // الانتقال للسؤال التالي بعد ثانيتين
+                    setTimeout(() => {
+                        loadQuestion();
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+                alert('حدث خطأ في إرسال الإجابة');
+            }
+        }
+        
+        function showExplanation(explanation) {
+            document.getElementById('explanationText').textContent = explanation;
+            document.getElementById('explanation').classList.add('show');
+        }
+        
+        // زر 50:50
+        document.getElementById('fiftyBtn').addEventListener('click', async function() {
+            if (usedFifty) return;
+            
+            try {
+                const response = await fetch('/use_fifty');
+                const result = await response.json();
+                
+                if (result.disabled_options) {
+                    result.disabled_options.forEach(index => {
+                        const buttons = document.querySelectorAll('.option-btn');
+                        if (buttons[index]) {
+                            buttons[index].disabled = true;
+                        }
+                    });
+                    
+                    usedFifty = true;
+                    this.disabled = true;
+                    document.getElementById('hint').textContent = 'تم استخدام 50:50 ✔️';
+                }
+            } catch (error) {
+                console.error('Error using 50:50:', error);
+            }
+        });
+        
+        // زر التخطي
+        document.getElementById('skipBtn').addEventListener('click', function() {
+            clearInterval(timerInterval);
+            submitAnswer(-1);
+        });
+    </script>
+</body>
+</html>
