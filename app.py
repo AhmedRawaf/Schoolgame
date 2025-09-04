@@ -16,15 +16,46 @@
     - Railway
 """
 
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
 import random
 import csv
 import os
 from datetime import datetime
 import json
+import hashlib
 
 app = Flask(__name__)
 app.secret_key = 'periodic_quiz_secret_key_2024'
+
+# إعدادات النظام
+# استخدم مجلد instance للملفات القابلة للكتابة (متوافق مع PythonAnywhere)
+os.makedirs(app.instance_path, exist_ok=True)
+USERS_FILE = os.path.join(app.instance_path, 'users.json')
+RESULTS_FILE = os.path.join(app.instance_path, 'quiz_results.json')
+
+# تحميل البيانات من الملفات
+def load_users():
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+def save_users(users):
+    with open(USERS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+def load_results():
+    if os.path.exists(RESULTS_FILE):
+        with open(RESULTS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def save_results(results):
+    with open(RESULTS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
 # ------------------------ بيانات العناصر (قابلة للتوسعة) ------------------------
 ELEMENTS = [
@@ -149,7 +180,7 @@ def make_question(difficulty):
 # ------------------------ حفظ النتائج CSV ------------------------
 def save_results_to_csv(history, score, qcount, qtime, difficulty, student_name, student_class):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    base = os.path.abspath(os.path.dirname(__file__))
+    base = app.instance_path
     summary_path = os.path.join(base, "results_summary.csv")
     detail_path = os.path.join(base, "results_detailed.csv")
 
@@ -182,10 +213,89 @@ def save_results_to_csv(history, score, qcount, qtime, difficulty, student_name,
 
     return summary_path, detail_path
 
+# ------------------------ دوال النظام ------------------------
+
 # ------------------------ مسارات الويب ------------------------
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # إذا كان المستخدم مسجل دخول، أرسله للصفحة المناسبة
+    if session.get('user_email'):
+        users = load_users()
+        user = users.get(session['user_email'])
+        if user:
+            if user['user_type'] == 'teacher':
+                return redirect('/teacher/dashboard')
+            elif user['user_type'] == 'student':
+                return redirect('/student/dashboard')
+    
+    return render_template('login.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        users = load_users()
+        user = users.get(email)
+        
+        if user and user['password_hash'] == hash_password(password):
+            session['user_email'] = email
+            session['user_type'] = user['user_type']
+            session['user_name'] = user['name']
+            
+            if user['user_type'] == 'teacher':
+                return redirect('/teacher/dashboard')
+            elif user['user_type'] == 'student':
+                return redirect('/student/dashboard')
+        else:
+            return render_template('login.html', error="البريد الإلكتروني أو كلمة المرور غير صحيحة")
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        name = request.form.get('name')
+        user_type = request.form.get('user_type')
+        class_name = request.form.get('class_name', '') if user_type == 'student' else None
+        
+        users = load_users()
+        
+        # التحقق من وجود المستخدم
+        if email in users:
+            return render_template('register.html', error="البريد الإلكتروني مستخدم بالفعل")
+        
+        # إنشاء المستخدم
+        users[email] = {
+            'email': email,
+            'password_hash': hash_password(password),
+            'name': name,
+            'user_type': user_type,
+            'class_name': class_name,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        save_users(users)
+        
+        # تسجيل الدخول مباشرة
+        session['user_email'] = email
+        session['user_type'] = user_type
+        session['user_name'] = name
+        
+        if user_type == 'teacher':
+            return redirect('/teacher/dashboard')
+        elif user_type == 'student':
+            return redirect('/student/dashboard')
+    
+    return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 @app.route('/start_quiz', methods=['POST'])
 def start_quiz():
@@ -303,8 +413,29 @@ def finish_quiz():
     if 'questions' not in session:
         return redirect('/')
     
-    # حفظ النتائج
+    if not session.get('user_email'):
+        return redirect('/')
+    
+    # حفظ النتائج في ملف JSON
     settings = session['game_settings']
+    quiz_result = {
+        'user_email': session['user_email'],
+        'student_name': settings['student_name'],
+        'class_name': settings['student_class'],
+        'difficulty': settings['difficulty'],
+        'total_questions': settings['qCount'],
+        'correct_answers': session['score'],
+        'score': session['score'],
+        'time_taken': settings['qTime'] * settings['qCount'],
+        'answers_detail': session['history'],
+        'created_at': datetime.now().isoformat()
+    }
+    
+    results = load_results()
+    results.append(quiz_result)
+    save_results(results)
+    
+    # حفظ نسخة احتياطية في CSV أيضاً
     summary_path, detail_path = save_results_to_csv(
         session['history'],
         session['score'],
@@ -338,9 +469,152 @@ def new_game():
     session.clear()
     return redirect('/')
 
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """لوحة تحكم المدير"""
+    if session.get('user_type') != 'admin':
+        return redirect('/')
+    
+    # قراءة ملفات CSV لعرض إحصائيات شاملة
+    base = app.instance_path
+    summary_path = os.path.join(base, "results_summary.csv")
+    
+    stats = {
+        'total_tests': 0,
+        'total_students': 0,
+        'avg_score': 0,
+        'class_stats': {},
+        'difficulty_stats': {}
+    }
+    
+    if os.path.exists(summary_path):
+        try:
+            with open(summary_path, 'r', encoding='utf-8-sig') as f:
+                reader = csv.DictReader(f)
+                tests = list(reader)
+                stats['total_tests'] = len(tests)
+                stats['total_students'] = len(set(test['student_name'] for test in tests))
+                
+                if tests:
+                    scores = [int(test['score']) for test in tests]
+                    stats['avg_score'] = round(sum(scores) / len(scores), 1)
+                    
+                    # إحصائيات الصفوف
+                    for test in tests:
+                        class_name = test['class']
+                        if class_name not in stats['class_stats']:
+                            stats['class_stats'][class_name] = {'count': 0, 'total_score': 0}
+                        stats['class_stats'][class_name]['count'] += 1
+                        stats['class_stats'][class_name]['total_score'] += int(test['score'])
+                    
+                    # إحصائيات الصعوبة
+                    for test in tests:
+                        difficulty = test['difficulty']
+                        if difficulty not in stats['difficulty_stats']:
+                            stats['difficulty_stats'][difficulty] = {'count': 0, 'total_score': 0}
+                        stats['difficulty_stats'][difficulty]['count'] += 1
+                        stats['difficulty_stats'][difficulty]['total_score'] += int(test['score'])
+        except:
+            pass
+    
+    return render_template('admin_dashboard.html', stats=stats)
+
+@app.route('/student/dashboard')
+def student_dashboard():
+    """لوحة تحكم الطالب"""
+    if not session.get('user_email'):
+        return redirect('/')
+    
+    users = load_users()
+    user = users.get(session['user_email'])
+    if not user or user['user_type'] != 'student':
+        return redirect('/')
+    
+    # جلب نتائج الطالب
+    results = load_results()
+    student_results = [r for r in results if r['user_email'] == session['user_email']]
+    student_results.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    stats = {
+        'total_tests': len(student_results),
+        'avg_score': 0,
+        'best_score': 0,
+        'recent_results': student_results[:5]  # آخر 5 اختبارات
+    }
+    
+    if student_results:
+        scores = [result['score'] for result in student_results]
+        stats['avg_score'] = round(sum(scores) / len(scores), 1)
+        stats['best_score'] = max(scores)
+    
+    return render_template('student_dashboard.html', stats=stats, user=user)
+
+@app.route('/teacher/dashboard')
+def teacher_dashboard():
+    """لوحة تحكم المعلم"""
+    if not session.get('user_email'):
+        return redirect('/')
+    
+    users = load_users()
+    user = users.get(session['user_email'])
+    if not user or user['user_type'] != 'teacher':
+        return redirect('/')
+    
+    # إحصائيات من الملفات
+    all_results = load_results()
+    students = {email: user_data for email, user_data in users.items() if user_data['user_type'] == 'student'}
+    
+    stats = {
+        'total_tests': len(all_results),
+        'total_students': len(students),
+        'avg_score': 0,
+        'recent_results': [],
+        'class_stats': {},
+        'student_stats': []
+    }
+    
+    if all_results:
+        scores = [result['score'] for result in all_results]
+        stats['avg_score'] = round(sum(scores) / len(scores), 1)
+        
+        # النتائج الأخيرة
+        stats['recent_results'] = sorted(all_results, key=lambda x: x['created_at'], reverse=True)[:10]
+        
+        # إحصائيات الصفوف
+        for result in all_results:
+            class_name = result['class_name']
+            if class_name not in stats['class_stats']:
+                stats['class_stats'][class_name] = {'count': 0, 'total_score': 0}
+            stats['class_stats'][class_name]['count'] += 1
+            stats['class_stats'][class_name]['total_score'] += result['score']
+        
+        # إحصائيات الطلاب
+        for email, student in students.items():
+            student_results = [r for r in all_results if r['user_email'] == email]
+            if student_results:
+                avg_score = sum(r['score'] for r in student_results) / len(student_results)
+                stats['student_stats'].append({
+                    'name': student['name'],
+                    'class': student['class_name'],
+                    'tests_count': len(student_results),
+                    'avg_score': round(avg_score, 1),
+                    'last_test': max(r['created_at'] for r in student_results)
+                })
+    
+    return render_template('teacher_dashboard.html', stats=stats)
+
+@app.route('/teacher/logout')
+def teacher_logout():
+    """تسجيل خروج المعلم"""
+    session.clear()
+    return redirect('/')
+
 @app.route('/download/summary')
 def download_summary():
-    """تحميل ملف ملخص النتائج"""
+    """تحميل ملف ملخص النتائج - للمعلمين والمديرين فقط"""
+    if session.get('user_type') not in ['teacher', 'admin']:
+        return redirect('/')
+    
     base = os.path.abspath(os.path.dirname(__file__))
     summary_path = os.path.join(base, "results_summary.csv")
     
@@ -351,8 +625,11 @@ def download_summary():
 
 @app.route('/download/detailed')
 def download_detailed():
-    """تحميل ملف تفاصيل النتائج"""
-    base = os.path.abspath(os.path.dirname(__file__))
+    """تحميل ملف تفاصيل النتائج - للمعلمين والمديرين فقط"""
+    if session.get('user_type') not in ['teacher', 'admin']:
+        return redirect('/')
+    
+    base = app.instance_path
     detail_path = os.path.join(base, "results_detailed.csv")
     
     if os.path.exists(detail_path):
@@ -362,11 +639,14 @@ def download_detailed():
 
 @app.route('/download/both')
 def download_both():
-    """تحميل كلا الملفين كـ ZIP"""
+    """تحميل كلا الملفين كـ ZIP - للمعلمين والمديرين فقط"""
+    if session.get('user_type') not in ['teacher', 'admin']:
+        return redirect('/')
+    
     import zipfile
     import io
     
-    base = os.path.abspath(os.path.dirname(__file__))
+    base = app.instance_path
     summary_path = os.path.join(base, "results_summary.csv")
     detail_path = os.path.join(base, "results_detailed.csv")
     

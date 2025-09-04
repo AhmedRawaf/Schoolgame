@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التسجيل - من أنا في الجدول الدوري؟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0b1020 0%, #1a1f3a 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(19, 26, 51, 0.9);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #6ee7b7;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(110, 231, 183, 0.3);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            color: #e5e7eb;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: block;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #374151;
+            border-radius: 10px;
+            background: rgba(31, 41, 55, 0.8);
+            color: #e5e7eb;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+        
+        .register-btn {
+            background: linear-gradient(135deg, #6ee7b7, #34d399);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .register-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(110, 231, 183, 0.3);
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #f87171;
+            color: #f87171;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #9ca3af;
+        }
+        
+        .login-link a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .user-types {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .user-type {
+            background: rgba(15, 23, 52, 0.6);
+            border: 2px solid #374151;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .user-type:hover {
+            border-color: #60a5fa;
+            background: rgba(15, 23, 52, 0.8);
+        }
+        
+        .user-type.selected {
+            border-color: #6ee7b7;
+            background: rgba(110, 231, 183, 0.1);
+        }
+        
+        .user-type .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        
+        .user-type .name {
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+        
+        .class-field {
+            display: none;
+        }
+        
+        .class-field.show {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .user-types {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">إنشاء حساب جديد</h1>
+        <p class="subtitle">انضم إلى نظام اختبار الجدول الدوري</p>
+        
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">الاسم الكامل</label>
+                <input type="text" id="name" name="name" required placeholder="أدخل اسمك الكامل">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">البريد الإلكتروني</label>
+                <input type="email" id="email" name="email" required placeholder="أدخل بريدك الإلكتروني">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" name="password" required placeholder="أدخل كلمة المرور">
+            </div>
+            
+            <div class="form-group">
+                <label>نوع الحساب:</label>
+                <div class="user-types">
+                    <div class="user-type" onclick="selectUserType('teacher')">
+                        <div class="icon">👨‍🏫</div>
+                        <div class="name">معلم</div>
+                    </div>
+                    <div class="user-type" onclick="selectUserType('student')">
+                        <div class="icon">👨‍🎓</div>
+                        <div class="name">طالب</div>
+                    </div>
+                </div>
+                <input type="hidden" id="user_type" name="user_type" required>
+            </div>
+            
+            <div class="form-group class-field" id="class_field">
+                <label for="class_name">الصف</label>
+                <input type="text" id="class_name" name="class_name" placeholder="أدخل صفك">
+            </div>
+            
+            <button type="submit" class="register-btn">إنشاء الحساب</button>
+        </form>
+        
+        <div class="login-link">
+            لديك حساب بالفعل؟ <a href="/login">تسجيل الدخول</a>
+        </div>
+    </div>
+
+    <script>
+        function selectUserType(type) {
+            // إزالة التحديد من جميع العناصر
+            document.querySelectorAll('.user-type').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // تحديد العنصر المختار
+            event.currentTarget.classList.add('selected');
+            
+            // تعيين القيمة
+            document.getElementById('user_type').value = type;
+            
+            // إظهار/إخفاء حقل الصف
+            const classField = document.getElementById('class_field');
+            if (type === 'student') {
+                classField.classList.add('show');
+                document.getElementById('class_name').required = true;
+            } else {
+                classField.classList.remove('show');
+                document.getElementById('class_name').required = false;
+            }
+        }
+    </script>
+</body>
+</html>

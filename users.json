@@ -1,0 +1,26 @@
+{
+  "teacher@demo.com": {
+    "email": "teacher@demo.com",
+    "password_hash": "cde383eee8ee7a4400adf7a15f716f179a2eb97646b37e089eb8d6d04e663416",
+    "name": "أحمد المعلم",
+    "user_type": "teacher",
+    "class_name": null,
+    "created_at": "2025-09-04T09:48:54.702763"
+  },
+  "student@demo.com": {
+    "email": "student@demo.com",
+    "password_hash": "703b0a3d6ad75b649a28adde7d83c6251da457549263bc7ff45ec709b0a8448b",
+    "name": "سارة الطالبة",
+    "user_type": "student",
+    "class_name": "الصف العاشر",
+    "created_at": "2025-09-04T09:48:54.702782"
+  },
+  "ahmed.alrawaf@outlook.com": {
+    "email": "ahmed.alrawaf@outlook.com",
+    "password_hash": "af901ae9c7a0e001ee196952c9947591fdf6ef23d58eb6991dc7be466f25fb4f",
+    "name": "احمد الرواف ",
+    "user_type": "teacher",
+    "class_name": null,
+    "created_at": "2025-09-04T09:52:48.083933"
+  }
+}
