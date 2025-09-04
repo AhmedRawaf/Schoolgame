@@ -16,7 +16,7 @@
     - Railway
 """
 
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 import random
 import csv
 import os
@@ -337,6 +337,56 @@ def new_game():
     # مسح الجلسة
     session.clear()
     return redirect('/')
+
+@app.route('/download/summary')
+def download_summary():
+    """تحميل ملف ملخص النتائج"""
+    base = os.path.abspath(os.path.dirname(__file__))
+    summary_path = os.path.join(base, "results_summary.csv")
+    
+    if os.path.exists(summary_path):
+        return send_file(summary_path, as_attachment=True, download_name='ملخص_نتائج_الاختبار.csv')
+    else:
+        return "ملف الملخص غير موجود", 404
+
+@app.route('/download/detailed')
+def download_detailed():
+    """تحميل ملف تفاصيل النتائج"""
+    base = os.path.abspath(os.path.dirname(__file__))
+    detail_path = os.path.join(base, "results_detailed.csv")
+    
+    if os.path.exists(detail_path):
+        return send_file(detail_path, as_attachment=True, download_name='تفاصيل_نتائج_الاختبار.csv')
+    else:
+        return "ملف التفاصيل غير موجود", 404
+
+@app.route('/download/both')
+def download_both():
+    """تحميل كلا الملفين كـ ZIP"""
+    import zipfile
+    import io
+    
+    base = os.path.abspath(os.path.dirname(__file__))
+    summary_path = os.path.join(base, "results_summary.csv")
+    detail_path = os.path.join(base, "results_detailed.csv")
+    
+    # إنشاء ملف ZIP في الذاكرة
+    memory_file = io.BytesIO()
+    
+    with zipfile.ZipFile(memory_file, 'w') as zf:
+        if os.path.exists(summary_path):
+            zf.write(summary_path, 'ملخص_نتائج_الاختبار.csv')
+        if os.path.exists(detail_path):
+            zf.write(detail_path, 'تفاصيل_نتائج_الاختبار.csv')
+    
+    memory_file.seek(0)
+    
+    return send_file(
+        io.BytesIO(memory_file.getvalue()),
+        as_attachment=True,
+        download_name='نتائج_الاختبار.zip',
+        mimetype='application/zip'
+    )
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

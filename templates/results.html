@@ -224,6 +224,32 @@
         .download-info {
             color: #9ca3af;
             font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #6ee7b7, #34d399);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(110, 231, 183, 0.3);
+            color: white;
+            text-decoration: none;
         }
         
         @media (max-width: 768px) {
@@ -283,7 +309,12 @@
         <div class="download-section">
             <div class="download-text">📊 تم حفظ النتائج بنجاح!</div>
             <div class="download-info">
-                تم حفظ ملخص النتائج في ملف CSV يمكن للمعلم تحميله وتحليله
+                يمكنك تحميل ملفات النتائج للتحليل
+            </div>
+            <div class="download-buttons">
+                <a href="/download/summary" class="download-btn">📋 تحميل الملخص</a>
+                <a href="/download/detailed" class="download-btn">📝 تحميل التفاصيل</a>
+                <a href="/download/both" class="download-btn">📦 تحميل الكل (ZIP)</a>
             </div>
         </div>
         
