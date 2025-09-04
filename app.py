@@ -573,6 +573,22 @@ def teacher_dashboard():
         'student_stats': []
     }
     
+    # بناء قائمة الطلاب مع إحصائيات مختصرة للعرض في اللوحة
+    student_list = []
+    for email, stu in students.items():
+        s_results = [r for r in all_results if r['user_email'] == email]
+        tests_count = len(s_results)
+        avg_score = round(sum(r['score'] for r in s_results) / tests_count, 1) if tests_count else 0
+        last_test = max((r['created_at'] for r in s_results), default=None)
+        student_list.append({
+            'email': email,
+            'name': stu.get('name') or email,
+            'class': stu.get('class_name') or '-',
+            'tests_count': tests_count,
+            'avg_score': avg_score,
+            'last_test': last_test
+        })
+
     if all_results:
         scores = [result['score'] for result in all_results]
         stats['avg_score'] = round(sum(scores) / len(scores), 1)
@@ -601,7 +617,39 @@ def teacher_dashboard():
                     'last_test': max(r['created_at'] for r in student_results)
                 })
     
-    return render_template('teacher_dashboard.html', stats=stats)
+    return render_template('teacher_dashboard.html', stats=stats, students=student_list)
+
+@app.route('/teacher/student/<path:email>')
+def teacher_student_detail(email):
+    """تفاصيل طالب محدد مع جميع محاولاته وإجاباته"""
+    if not session.get('user_email'):
+        return redirect('/')
+
+    users = load_users()
+    viewer = users.get(session['user_email'])
+    if not viewer or viewer.get('user_type') != 'teacher':
+        return redirect('/')
+
+    student = users.get(email)
+    if not student or student.get('user_type') != 'student':
+        return redirect('/teacher/dashboard')
+
+    results = load_results()
+    attempts = [r for r in results if r['user_email'] == email]
+    attempts.sort(key=lambda x: x['created_at'], reverse=True)
+
+    # حساب ملخص سريع
+    total_tests = len(attempts)
+    avg_score = round(sum(r['score'] for r in attempts) / total_tests, 1) if total_tests else 0
+    best_score = max((r['score'] for r in attempts), default=0)
+
+    return render_template('student_detail.html',
+                           student=student,
+                           email=email,
+                           attempts=attempts,
+                           total_tests=total_tests,
+                           avg_score=avg_score,
+                           best_score=best_score)
 
 @app.route('/teacher/logout')
 def teacher_logout():

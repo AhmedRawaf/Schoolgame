@@ -99,6 +99,26 @@
             margin-bottom: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
+
+        .students-section {
+            background: rgba(19, 26, 51, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .students-table th, .students-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #374151;
+            text-align: right;
+        }
+        .students-table th { color: #9ca3af; font-weight: 600; }
+        .students-table a { color: #60a5fa; text-decoration: none; }
+        .students-table a:hover { text-decoration: underline; }
         
         .section-title {
             font-size: 1.8rem;
@@ -215,6 +235,38 @@
             </div>
         </div>
         
+        <div class="students-section">
+            <h2 class="section-title">👥 قائمة الطلاب</h2>
+            {% if students %}
+            <table class="students-table">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>البريد</th>
+                        <th>الصف</th>
+                        <th>عدد الاختبارات</th>
+                        <th>المتوسط</th>
+                        <th>آخر محاولة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td><a href="/teacher/student/{{ s.email }}">{{ s.name }}</a></td>
+                        <td>{{ s.email }}</td>
+                        <td>{{ s.class }}</td>
+                        <td>{{ s.tests_count }}</td>
+                        <td>{{ s.avg_score }}</td>
+                        <td>{{ s.last_test or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color:#9ca3af; text-align:center;">لا يوجد طلاب بعد.</p>
+            {% endif %}
+        </div>
+
         <div class="back-link">
             <a href="/">← العودة للصفحة الرئيسية</a>
         </div>
